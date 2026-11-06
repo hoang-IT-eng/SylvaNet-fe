@@ -16,7 +16,9 @@ import {
   TrendingUp,
   TrendingDown,
   LineChart as ChartIcon,
+  Maximize2,
 } from 'lucide-react';
+import { ComparativeTelemetryDashboard } from './ComparativeTelemetryDashboard';
 
 export interface HistoryPoint {
   minute: number;
@@ -171,6 +173,7 @@ export const SensorStatusWidget: React.FC = () => {
   const [statusTransitions, setStatusTransitions] = useState<Record<string, StatusTransition>>({});
   const [selectedSensorId, setSelectedSensorId] = useState<string>('MS-CANOPY-04');
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
+  const [isFullDashboardOpen, setIsFullDashboardOpen] = useState<boolean>(false);
 
   const prevStatusesRef = useRef<Record<string, 'online' | 'offline'>>({});
   const initialMountRef = useRef<boolean>(true);
@@ -383,6 +386,14 @@ export const SensorStatusWidget: React.FC = () => {
             aria-label="Refresh telemetry status"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => setIsFullDashboardOpen(true)}
+            className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--lime)] text-[var(--ink2)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            title="Expand to Full Comparative Dashboard"
+            aria-label="Expand to Full Comparative Dashboard"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -704,6 +715,15 @@ export const SensorStatusWidget: React.FC = () => {
             })}
           </div>
 
+          {/* Action to Expand Full Matrix */}
+          <button
+            onClick={() => setIsFullDashboardOpen(true)}
+            className="w-full py-2 px-3 rounded-lg bg-[var(--ink)] text-white hover:bg-[var(--ink2)] font-mono text-[10px] uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-[var(--lime)]" />
+            <span>Open Comparative Node Matrix ({data.totalCount} Nodes)</span>
+          </button>
+
           {/* Footer note */}
           <div className="pt-1.5 border-t border-[rgba(16,41,26,0.06)] flex items-center justify-between text-[9px] font-mono text-[var(--ink2)]/70">
             <span className="flex items-center gap-1">
@@ -714,6 +734,22 @@ export const SensorStatusWidget: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Full-width Comparative Telemetry Dashboard Overlay */}
+      <ComparativeTelemetryDashboard
+        isOpen={isFullDashboardOpen}
+        onClose={() => setIsFullDashboardOpen(false)}
+        sensors={data.sensors}
+        stationId={data.stationId}
+        meshHealth={data.meshHealth}
+        activeCount={data.activeCount}
+        totalCount={data.totalCount}
+        lastRefreshed={lastRefreshed}
+        onRefresh={fetchSensorStatus}
+        isFetching={isFetching}
+        onSelectSensor={(sensorId) => setSelectedSensorId(sensorId)}
+        selectedSensorId={selectedSensorId}
+      />
     </div>
   );
 };
