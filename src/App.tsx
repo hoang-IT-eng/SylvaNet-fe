@@ -13,6 +13,7 @@ import {
   calcSparklineDashOffset,
 } from './utils/mossline-math';
 import { VideoAnimatorModal } from './components/VideoAnimatorModal';
+import { SensorStatusWidget } from './components/SensorStatusWidget';
 import { Sparkles } from 'lucide-react';
 
 // Exact asset URLs as specified
@@ -78,6 +79,7 @@ export default function App() {
   const acctWordsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const hotspotRefs = useRef<(HTMLDivElement | null)[]>([]);
   const credHeadingRef = useRef<HTMLDivElement>(null);
+  const sensorWidgetRef = useRef<HTMLDivElement>(null);
   const carbonCardRef = useRef<HTMLDivElement>(null);
   const carbonValRef = useRef<HTMLSpanElement>(null);
   const sparklineRef = useRef<SVGPolylineElement>(null);
@@ -521,6 +523,12 @@ export default function App() {
           credHeadingRef.current.style.opacity = `${sIn}`;
           credHeadingRef.current.style.transform = `translate3d(0, ${(1 - sIn) * 30}px, 0)`;
           credHeadingRef.current.style.filter = `blur(${(1 - sIn) * 8}px)`;
+        }
+
+        if (sensorWidgetRef.current) {
+          const wIn = ease(seg(sp, 0.74, 0.84));
+          sensorWidgetRef.current.style.opacity = `${wIn}`;
+          sensorWidgetRef.current.style.transform = `translate3d(0, ${(1 - wIn) * 24}px, 0)`;
         }
 
         const cIn = ease(seg(sp, 0.74, 0.86));
@@ -1187,6 +1195,14 @@ ELEV 842 M`}
               >
                 Scientific credibility for corporate climate action
               </h3>
+            </div>
+
+            {/* Real-time Field Sensor Telemetry Status Widget */}
+            <div
+              ref={sensorWidgetRef}
+              className="sensor-widget-container pointer-events-auto"
+            >
+              <SensorStatusWidget />
             </div>
 
             <div

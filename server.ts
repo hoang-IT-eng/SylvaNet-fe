@@ -26,6 +26,50 @@ async function startServer() {
     });
   });
 
+  // Mock API: Real-time status of random field sensors in Station 07
+  const SENSOR_CATALOG = [
+    { id: 'MS-CANOPY-04', name: 'Canopy RH & Flux', zone: 'North Ridge Quad', baseReading: '71% RH', metric: '14.2°C' },
+    { id: 'MS-SOIL-12', name: 'Sub-surface Peat Core', zone: 'Wetland Baseline', baseReading: '+3.8 tCO₂e/ha', metric: '6.4 pH' },
+    { id: 'MS-MAST-07', name: 'AMRV Eddy Covariance', zone: 'Central Monolith', baseReading: '412.8 ppm CO₂', metric: '0.48 m/s' },
+    { id: 'MS-SPECIES-02', name: 'Acoustic Bio-monitor', zone: 'Fern Understory', baseReading: '214 taxa', metric: 'Bio-index 8.4' },
+    { id: 'MS-MICRO-19', name: 'Microclimate Dendro', zone: 'South Crevice', baseReading: '13.8°C', metric: '82% Soil Sat' },
+    { id: 'MS-SPORE-05', name: 'Optical Spore Counter', zone: 'Lichen Crest', baseReading: '38 pts/m³', metric: 'Solar 840 W/m²' },
+    { id: 'MS-HYDRO-08', name: 'Stemflow Hydro-gauge', zone: 'Basal Moss Wall', baseReading: '1.2 mm/hr', metric: 'Temp 12.6°C' },
+  ];
+
+  app.get('/api/sensors/status', (_req, res) => {
+    // Randomize telemetry slightly each request to simulate live telemetry
+    const now = new Date();
+    const sensors = SENSOR_CATALOG.map((s, index) => {
+      // Deterministically keep most online, with a chance of offline for 1 sensor
+      const isOffline = (index === 3 && Math.random() > 0.4) || (index === 6 && Math.random() > 0.7);
+      const battery = isOffline ? Math.floor(12 + Math.random() * 8) : Math.floor(75 + Math.random() * 24);
+      const latencyMs = isOffline ? Math.floor(1200 + Math.random() * 800) : Math.floor(14 + Math.random() * 35);
+      
+      return {
+        id: s.id,
+        name: s.name,
+        zone: s.zone,
+        status: isOffline ? 'offline' : 'online',
+        reading: s.baseReading,
+        metric: s.metric,
+        battery,
+        latencyMs,
+        lastPing: isOffline ? `${Math.floor(2 + Math.random() * 15)}m ago` : `${Math.floor(1 + Math.random() * 5)}s ago`,
+      };
+    });
+
+    const onlineCount = sensors.filter(s => s.status === 'online').length;
+    res.json({
+      timestamp: now.toISOString(),
+      stationId: 'STATION-07-ALTO',
+      meshHealth: `${((onlineCount / sensors.length) * 100).toFixed(1)}%`,
+      activeCount: onlineCount,
+      totalCount: sensors.length,
+      sensors,
+    });
+  });
+
   // Image-to-Video generation using Gemini Interactions API (gemini-omni-1.2-flash)
   app.post('/api/animate', async (req, res) => {
     try {

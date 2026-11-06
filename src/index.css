@@ -320,7 +320,20 @@ a {
   transform: translateX(4px);
 }
 
+.sensor-widget-container {
+  position: absolute;
+  left: 34px;
+  top: 42vh;
+  z-index: 20;
+  transition: opacity 0.3s ease;
+}
+
 @media (max-width: 820px) {
+  .sensor-widget-container {
+    left: 18px !important;
+    top: 26vh !important;
+    width: min(340px, calc(100vw - 36px)) !important;
+  }
   .nav-bar {
     padding: 16px 18px;
   }
