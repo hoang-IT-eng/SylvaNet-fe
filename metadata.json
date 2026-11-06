@@ -1,0 +1,6 @@
+{
+  "name": "Mossline — Measure the Living Planet",
+  "description": "Floating moss island scroll fly-in landing page for Mossline, measuring ecosystems with field sensors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
