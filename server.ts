@@ -28,13 +28,13 @@ async function startServer() {
 
   // Mock API: Real-time status of random field sensors in Station 07
   const SENSOR_CATALOG = [
-    { id: 'MS-CANOPY-04', name: 'Canopy RH & Flux', zone: 'North Ridge Quad', baseReading: '71% RH', metric: '14.2°C' },
-    { id: 'MS-SOIL-12', name: 'Sub-surface Peat Core', zone: 'Wetland Baseline', baseReading: '+3.8 tCO₂e/ha', metric: '6.4 pH' },
-    { id: 'MS-MAST-07', name: 'AMRV Eddy Covariance', zone: 'Central Monolith', baseReading: '412.8 ppm CO₂', metric: '0.48 m/s' },
-    { id: 'MS-SPECIES-02', name: 'Acoustic Bio-monitor', zone: 'Fern Understory', baseReading: '214 taxa', metric: 'Bio-index 8.4' },
-    { id: 'MS-MICRO-19', name: 'Microclimate Dendro', zone: 'South Crevice', baseReading: '13.8°C', metric: '82% Soil Sat' },
-    { id: 'MS-SPORE-05', name: 'Optical Spore Counter', zone: 'Lichen Crest', baseReading: '38 pts/m³', metric: 'Solar 840 W/m²' },
-    { id: 'MS-HYDRO-08', name: 'Stemflow Hydro-gauge', zone: 'Basal Moss Wall', baseReading: '1.2 mm/hr', metric: 'Temp 12.6°C' },
+    { id: 'MS-CANOPY-04', name: 'Canopy RH & Flux', zone: 'North Ridge Quad', baseReading: '71% RH', metric: '14.2°C', baseVal: 71.0, unit: '% RH', variance: 1.8 },
+    { id: 'MS-SOIL-12', name: 'Sub-surface Peat Core', zone: 'Wetland Baseline', baseReading: '+3.8 tCO₂e/ha', metric: '6.4 pH', baseVal: 3.8, unit: 'tCO₂e/ha', variance: 0.15 },
+    { id: 'MS-MAST-07', name: 'AMRV Eddy Covariance', zone: 'Central Monolith', baseReading: '412.8 ppm CO₂', metric: '0.48 m/s', baseVal: 412.8, unit: 'ppm CO₂', variance: 6.5 },
+    { id: 'MS-SPECIES-02', name: 'Acoustic Bio-monitor', zone: 'Fern Understory', baseReading: '214 taxa', metric: 'Bio-index 8.4', baseVal: 214, unit: 'taxa', variance: 12 },
+    { id: 'MS-MICRO-19', name: 'Microclimate Dendro', zone: 'South Crevice', baseReading: '13.8°C', metric: '82% Soil Sat', baseVal: 13.8, unit: '°C', variance: 0.8 },
+    { id: 'MS-SPORE-05', name: 'Optical Spore Counter', zone: 'Lichen Crest', baseReading: '38 pts/m³', metric: 'Solar 840 W/m²', baseVal: 38, unit: 'pts/m³', variance: 4 },
+    { id: 'MS-HYDRO-08', name: 'Stemflow Hydro-gauge', zone: 'Basal Moss Wall', baseReading: '1.2 mm/hr', metric: 'Temp 12.6°C', baseVal: 1.2, unit: 'mm/hr', variance: 0.25 },
   ];
 
   app.get('/api/sensors/status', (_req, res) => {
@@ -46,16 +46,41 @@ async function startServer() {
       const battery = isOffline ? Math.floor(12 + Math.random() * 8) : Math.floor(75 + Math.random() * 24);
       const latencyMs = isOffline ? Math.floor(1200 + Math.random() * 800) : Math.floor(14 + Math.random() * 35);
       
+      // Generate 10-minute history (11 points, minute -10 to 0)
+      const history = [];
+      let walk = s.baseVal - (Math.random() - 0.5) * s.variance;
+      for (let m = 10; m >= 0; m--) {
+        const drift = (Math.random() - 0.48) * (s.variance * 0.4);
+        walk = Math.max(0, walk + drift);
+        const pointTime = new Date(now.getTime() - m * 60 * 1000);
+        const valFormatted = s.unit === 'taxa' ? Math.round(walk) : parseFloat(walk.toFixed(2));
+        history.push({
+          minute: -m,
+          timeLabel: `${m === 0 ? 'Now' : `-${m}m`}`,
+          clock: pointTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          value: valFormatted,
+        });
+      }
+
+      const currentVal = history[history.length - 1].value;
+      const displayReading = s.unit === '% RH' 
+        ? `${currentVal}% RH` 
+        : s.unit === 'tCO₂e/ha' 
+        ? `+${currentVal} tCO₂e/ha` 
+        : `${currentVal} ${s.unit}`;
+
       return {
         id: s.id,
         name: s.name,
         zone: s.zone,
         status: isOffline ? 'offline' : 'online',
-        reading: s.baseReading,
+        reading: displayReading,
         metric: s.metric,
         battery,
         latencyMs,
         lastPing: isOffline ? `${Math.floor(2 + Math.random() * 15)}m ago` : `${Math.floor(1 + Math.random() * 5)}s ago`,
+        unit: s.unit,
+        history,
       };
     });
 
